@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ccc;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        input,
+        button {
+            padding: 8px;
+            width: 100%;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Employee Management</h1>
+
+   
+    <div class="form-section">
+        <h2>Add New Employee</h2>
+        <form th:action="@{/newEmployee}" method="post">
+            <label for="isim">First Name:</label>
+            <input type="text" id="isim" name="isim" required>
+            <label for="soyad">Last Name:</label>
+            <input type="text" id="soyad" name="soyad" required>
+            <label for="gorev">Position:</label>
+            <input type="text" id="gorev" name="gorev" required>
+            <label for="yas">Age:</label>
+            <input type="number" id="yas" name="yas" required>
+            <button type="submit">Add Employee</button>
+        </form>
+    </div>
+
+   
+    <div>
+        <h2>Employee List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Position</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="employee : ${EmployeeList}">
+                    <td th:text="${employee.empID}"></td>
+                    <td th:text="${employee.isim}"></td>
+                    <td th:text="${employee.soyad}"></td>
+                    <td th:text="${employee.gorev}"></td>
+                    <td th:text="${employee.yas}"></td>
+                    <td>
+                        
+                        <button type="button" th:attr="data-id=${employee.empID}, 
+             data-name=${employee.isim}, 
+             data-lastname=${employee.soyad}, 
+             data-position=${employee.gorev}, 
+             data-age=${employee.yas}" onclick="openEditForm(this)">
+                            Edit
+                        </button>
+
+
+                        <form th:action="@{/delEmployee/{id}(id=${employee.empID})}" method="get"
+                            style="display: inline;">
+                            <button type="submit"
+                                onclick="return confirm('Are you sure you want to delete this employee?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="form-section" id="editForm" style="display:none;">
+        <h2>Edit Employee</h2>
+        <form id="updateEmployeeForm">
+            <input type="hidden" id="empID" name="empID">
+            <label for="isim">First Name:</label>
+            <input type="text" id="editIsim" name="isim" required>
+            <label for="soyad">Last Name:</label>
+            <input type="text" id="editSoyad" name="soyad" required>
+            <label for="gorev">Position:</label>
+            <input type="text" id="editGorev" name="gorev" required>
+            <label for="yas">Age:</label>
+            <input type="number" id="editYas" name="yas" required>
+            <button type="button" onclick="updateEmployee()">Save Changes</button>
+        </form>
+    </div>
+
+   
+    <div class="form-section" th:if="${editEmployee != null}">
+        <h2>Edit Employee</h2>
+        <form th:action="@{/editEmployee}" method="post">
+            <input type="hidden" name="empID" th:value="${editEmployee.empID}">
+            <label for="isim">First Name:</label>
+            <input type="text" id="isim" name="isim" th:value="${editEmployee.isim}" required>
+            <label for="soyad">Last Name:</label>
+            <input type="text" id="soyad" name="soyad" th:value="${editEmployee.soyad}" required>
+            <label for="gorev">Position:</label>
+            <input type="text" id="gorev" name="gorev" th:value="${editEmployee.gorev}" required>
+            <label for="yas">Age:</label>
+            <input type="number" id="yas" name="yas" th:value="${editEmployee.yas}" required>
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</body>
+<script>
+    function openEditForm(button) {
+    const empID = button.getAttribute('data-id');
+    document.getElementById("editForm").style.display = "block";
+    document.getElementById("empID").value = empID;
+    document.getElementById("editIsim").value = button.getAttribute('data-name');
+    document.getElementById("editSoyad").value = button.getAttribute('data-lastname');
+    document.getElementById("editGorev").value = button.getAttribute('data-position');
+    document.getElementById("editYas").value = button.getAttribute('data-age');
+
+    
+    const saveButton = document.querySelector("#editForm button");
+    saveButton.setAttribute("onclick", `updateEmployee('${empID}')`);
+}
+
+
+
+    function updateEmployee(empID) {
+        const isim = document.getElementById("editIsim").value.trim();
+        const soyad = document.getElementById("editSoyad").value.trim();
+        const gorev = document.getElementById("editGorev").value.trim();
+        const yas = document.getElementById("editYas").value.trim();
+
+        if (!empID || !isim || !soyad || !gorev || !yas) {
+            window.location.reload();
+            return;
+        }
+
+        fetch(`/uptEmployee/${empID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isim, soyad, gorev, yas })
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert("Employee updated successfully!");
+                    location.reload();
+                } else {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+
+
+
+</script>
+
+</html>
